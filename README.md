@@ -1,5 +1,3 @@
-# Ecommerce_Angular_DotNetCore
- 
 # Ecommerce_Angular_DotNetCore 7.0 Project
 
 ![Ecommerce_Angular_DotNetCore Logo](https://yourdomain.com/logo.png)
