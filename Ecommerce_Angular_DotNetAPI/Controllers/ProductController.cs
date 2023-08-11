@@ -3,14 +3,13 @@ using Core.Entities;
 using Core.Interfaces;
 using Core.Specifications;
 using Ecommerce_Angular_DotNetAPI.Dtos;
+using Ecommerce_Angular_DotNetAPI.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce_Angular_DotNetAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductController : BaseApiController
     {
         private readonly IGenericRepository<Product> productRepo;
         private readonly IGenericRepository<ProductBrand> productBrandRepo;
@@ -38,15 +37,21 @@ namespace Ecommerce_Angular_DotNetAPI.Controllers
             var productToReturnDto = mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products);
             return Ok(productToReturnDto);
         }
+
         [HttpGet("GetProductById/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse),StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Product>> GetProductById(int id)
         {
             var specification = new ProductWithTypesAndBrandsSpecification(id);
+
             var product = await productRepo.GetEntityWithSpec(specification);
-            ProductToReturnDto productToReturnDto =
-                mapper.Map<Product, ProductToReturnDto>(product);
-            return Ok(productToReturnDto);
+
+            if (product == null) return NotFound(new ApiResponse(404));
+
+            return Ok(mapper.Map<Product, ProductToReturnDto>(product));
         }
+
         [HttpGet("GetProductByName/{name}")]
         public async Task<ActionResult<Product>> GetProductByName(string name)
         {

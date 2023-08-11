@@ -1,26 +1,35 @@
 using Core.Interfaces;
+using Ecommerce_Angular_DotNetAPI.Errors;
+using Ecommerce_Angular_DotNetAPI.Extensions;
+using Ecommerce_Angular_DotNetAPI.Middleware;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllersWithViews();
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddControllers();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("con"));
 });
 
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddApplicationServices();
 
-builder.Services.AddScoped<IProductRepository,ProductRepository>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddSwaggerDocumentation();
 
+
+// *** Configure() *** //
 
 var app = builder.Build();
-
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 var context = services.GetRequiredService<AppDbContext>();
@@ -32,10 +41,13 @@ try
 }
 catch (Exception ex)
 {
-    var logger =loggerFactory.CreateLogger<Program>();
+    var logger = loggerFactory.CreateLogger<Program>();
     logger.LogError(ex, "An error occured during migration");
 }
 
+app.UseStatusCodePagesWithReExecute("/errors/{0}");
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -44,14 +56,14 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSwaggerDocumentation();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseAuthentication();
 app.UseRouting();
 
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller}/{action=Index}/{id?}");
+app.MapControllers();
 
 app.MapFallbackToFile("index.html");
 
