@@ -26,6 +26,18 @@ builder.Services.AddApplicationServices();
 
 builder.Services.AddSwaggerDocumentation();
 
+builder.Services.AddCors(option =>
+{
+    option.AddPolicy("CorsPolicy", policy =>
+    {
+        policy
+        .AllowAnyHeader()
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .WithOrigins("https://localhost:4200");
+    });
+});
+
 
 // *** Configure() *** //
 
@@ -59,8 +71,15 @@ if (!app.Environment.IsDevelopment())
 app.UseSwaggerDocumentation();
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
+
+app.UseCors("CorsPolicy");
+
 app.UseAuthentication();
+
+app.UseAuthorization();
+
 app.UseRouting();
 
 app.MapControllers();

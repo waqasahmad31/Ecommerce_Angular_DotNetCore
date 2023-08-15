@@ -4,8 +4,10 @@ using Core.Interfaces;
 using Core.Specifications;
 using Ecommerce_Angular_DotNetAPI.Dtos;
 using Ecommerce_Angular_DotNetAPI.Errors;
+using Ecommerce_Angular_DotNetAPI.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Ecommerce_Angular_DotNetAPI.Controllers
 {
@@ -30,12 +32,22 @@ namespace Ecommerce_Angular_DotNetAPI.Controllers
         // *** Product Code here *** //
         #region
         [HttpGet("GetProducts")]
-        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts()
+        public async Task<ActionResult<Pagination<ProductToReturnDto>>> GetProducts(
+            [FromQuery]ProductSpecificationParams productPramas)
         {
-            var specification = new ProductWithTypesAndBrandsSpecification();
+            var specification = new ProductWithTypesAndBrandsSpecification(productPramas);
+
+            var countSpec = new ProductWithFilterForCountSpecification(productPramas);
+
+            var totalItems = await productRepo.CountAsynx(countSpec);
+
             var products = await productRepo.ListAsync(specification);
-            var productToReturnDto = mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products);
-            return Ok(productToReturnDto);
+
+            var data = mapper.
+                Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products);
+
+            return Ok(new Pagination<ProductToReturnDto>(productPramas.PageIndex,
+                productPramas.PageSize, totalItems, data));
         }
 
         [HttpGet("GetProductById/{id}")]
@@ -52,13 +64,6 @@ namespace Ecommerce_Angular_DotNetAPI.Controllers
             return Ok(mapper.Map<Product, ProductToReturnDto>(product));
         }
 
-        [HttpGet("GetProductByName/{name}")]
-        public async Task<ActionResult<Product>> GetProductByName(string name)
-        {
-            var specification = new ProductWithTypesAndBrandsSpecification(name);
-            var product = await productRepo.GetEntityWithSpec(specification);
-            return Ok(product);
-        }
         #endregion
 
         // *** Brands Code Here *** //

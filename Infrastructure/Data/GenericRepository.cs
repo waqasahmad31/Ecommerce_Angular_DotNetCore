@@ -13,6 +13,12 @@ namespace Infrastructure.Data
         {
             this.db = db;
         }
+
+        public async Task<int> CountAsynx(ISpecification<T> specification)
+        {
+            return await ApplySpecification(specification).CountAsync();
+        }
+
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {
             return await db.Set<T>().ToListAsync();
